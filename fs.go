@@ -10,12 +10,8 @@ import (
 	"time"
 )
 
-type EventCode int
-
 const (
-	sysInterval  = time.Millisecond * 500
-	syncInterval = time.Millisecond * 1000
-	maxFileSize  = 40 << 10
+	MaxFileSize = 2 << 15
 )
 
 type DirHandler func(path string, d fs.DirEntry) error

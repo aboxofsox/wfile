@@ -1,5 +1,7 @@
 package wfile
 
+type EventCode int
+
 const (
 	CHANGE EventCode = iota
 	NOCHANGE

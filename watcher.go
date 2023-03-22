@@ -9,6 +9,7 @@ type Watcher struct {
 	interval time.Duration
 	files    chan File
 	events   chan Event
+	errors   chan error
 	ffs      *FS
 }
 
@@ -40,7 +41,9 @@ func (w *Watcher) Walk() {
 		sum, err := Checksum(file.path)
 		if err != nil {
 			fmt.Println("file checksum error:", err)
+			w.files <- *file
 			w.events <- Event{name: "error", path: file.path, code: ERROR, error: err}
+			w.errors <- err
 		}
 		if file.last != sum {
 			file.last = sum
@@ -60,4 +63,7 @@ func (w *Watcher) Subscribe() {
 			fmt.Println("an error occurred:", event.path, event.error)
 		}
 	}
+}
+
+func (w *Watcher) Close() {
 }
