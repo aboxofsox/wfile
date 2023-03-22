@@ -1,3 +1,3 @@
 module github.com/aboxofsox/wfile
 
-go 1.8
+go 1.18
