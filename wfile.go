@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// Listen() will start the file listening process.
+// the default polling interval is 500ms.
 func Listen(root string) {
 	w := &Watcher{
 		interval: time.Millisecond * 500,

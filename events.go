@@ -8,6 +8,7 @@ const (
 	ERROR
 )
 
+// Event represents the event data when changes occur.
 type Event struct {
 	name  string
 	code  EventCode
