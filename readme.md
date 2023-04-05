@@ -29,7 +29,6 @@ func main() {
         // listen for any change events
 		go func() {
 			for event := range watcher.events {
-				wg.Add(1)
 				switch event.code {
 				case CHANGE:
 					// do something

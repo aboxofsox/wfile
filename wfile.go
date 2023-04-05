@@ -21,9 +21,7 @@ func Listen(m *Monitor) {
 		wg.Add(1)
 		go watcher.Watch(done)
 		go func() {
-			//defer wg.Done()
 			for event := range watcher.events {
-				//wg.Add(1)
 				switch event.code {
 				case CHANGE:
 					fmt.Println("change detected")
