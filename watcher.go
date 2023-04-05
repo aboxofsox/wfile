@@ -7,46 +7,54 @@ import (
 
 // Watcher holds all relevant data for the watching mechanism.
 type Watcher struct {
-	interval time.Duration
-	files    chan File
-	events   chan Event
-	errors   chan error
-	ffs      *FS
+	events  chan Event
+	errors  chan error
+	monitor *Monitor
 }
 
-// Watch() will "watch" a given directory for changes.
-func (w *Watcher) Watch() {
-	ticker := time.NewTicker(w.interval)
-	done := make(chan bool)
+type EventCode int
 
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case <-ticker.C:
-				w.Walk()
-			}
+const (
+	CHANGE EventCode = iota
+	NOCHANGE
+	ERROR
+)
+
+// Event represents the event data when changes occur.
+type Event struct {
+	name  string
+	code  EventCode
+	path  string
+	error error
+}
+
+// Watch will "watch" a given directory for changes.
+func (w *Watcher) Watch(done chan bool) {
+	ticker := time.NewTicker(time.Millisecond * 500)
+
+	for {
+		select {
+		case <-done:
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			w.Walk()
 		}
-	}()
+		time.Sleep(time.Millisecond * 1600)
+	}
 
-	time.Sleep(1600 * time.Millisecond)
-	ticker.Stop()
-	done <- true
 }
 
-// Walk() reads files in a given directory, does the checksum comparisons,
+// Walk reads files in a given directory, does the checksum comparisons,
 // and sends events to the Event channel of Watcher.
 func (w *Watcher) Walk() {
-	w.ffs.Update()
+	w.monitor.Refresh()
 
-	for _, f := range w.ffs.Iter() {
+	for _, f := range w.monitor.ExportFileMap() {
 		file := f.(*File)
 		sum, err := Checksum(file.path)
 		if err != nil {
 			fmt.Println("file checksum error:", err)
-			w.files <- *file
-			w.events <- Event{name: "error", path: file.path, code: ERROR, error: err}
 			w.errors <- err
 		}
 		if file.last != sum {
@@ -56,16 +64,19 @@ func (w *Watcher) Walk() {
 	}
 }
 
-// Subscribe() will listen for events emitted from the Watcher.
+// Subscribe will listen for events emitted from the Watcher.
 func (w *Watcher) Subscribe() {
 	for event := range w.events {
 		switch event.code {
 		case CHANGE:
 			fmt.Println("change detected in:", event.path)
+			break
 		case NOCHANGE:
 			fmt.Println("no change")
+			break
 		case ERROR:
 			fmt.Println("an error occurred:", event.path, event.error)
+			break
 		}
 	}
 }

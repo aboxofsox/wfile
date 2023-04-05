@@ -6,6 +6,10 @@ import (
 	"os"
 )
 
+const (
+	MaxFileSize = 1 << 12
+)
+
 func Checksum(path string) ([md5.Size]byte, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -23,7 +27,9 @@ func Checksum(path string) ([md5.Size]byte, error) {
 	if err != nil {
 		return [md5.Size]byte{}, err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
 
 	content := make([]byte, info.Size())
 	_, err = f.Read(content)

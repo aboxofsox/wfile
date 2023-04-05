@@ -10,14 +10,10 @@ import (
 	"time"
 )
 
-const (
-	MaxFileSize = 2 << 15
-)
-
 type DirHandler func(path string, d fs.DirEntry) error
 
-// FS stores the information we need for the cache
-type FS struct {
+// Monitor stores the information we need for the cache
+type Monitor struct {
 	root     string
 	interval time.Duration
 	files    *sync.Map
@@ -30,36 +26,37 @@ type File struct {
 	last [md5.Size]byte
 }
 
-// NewFS acts as a cache.
+// NewMonitor acts as a cache.
 // keeping track of the files to watch.
-func NewFS(root string) *FS {
-	return &FS{
+func NewMonitor(root string) *Monitor {
+	return &Monitor{
 		root:  root,
 		files: &sync.Map{},
 	}
 }
 
 // Add adds an item to the cache
-func (ffs *FS) Add(key, value any) {
-	if _, exists := ffs.files.Load(key); exists {
+func (m *Monitor) Add(key, value any) {
+	if _, exists := m.files.Load(key); exists {
+		fmt.Println(key, "exists")
 		return
 	}
-	ffs.files.Store(key, value)
+	m.files.Store(key, value)
 }
 
 // Delete removes an item from the cache
-func (ffs *FS) Delete(key any) {
-	if _, exists := ffs.files.Load(key); !exists {
+func (m *Monitor) Delete(key any) {
+	if _, exists := m.files.Load(key); !exists {
 		return
 	}
-	ffs.files.Delete(key)
+	m.files.Delete(key)
 }
 
-// Iter creates a map[any]any representation of the cache
-func (ffs *FS) Iter() map[any]any {
+// ExportFileMap creates a map[any]any representation of the cache
+func (m *Monitor) ExportFileMap() map[any]any {
 	mp := make(map[any]any)
 
-	ffs.files.Range(func(key, value any) bool {
+	m.files.Range(func(key, value any) bool {
 		mp[key] = value
 		return true
 	})
@@ -67,14 +64,14 @@ func (ffs *FS) Iter() map[any]any {
 }
 
 // Exists checks if a key exists in the cache
-func (ffs *FS) Exists(key any) bool {
-	_, exists := ffs.files.Load(key)
+func (m *Monitor) Exists(key any) bool {
+	_, exists := m.files.Load(key)
 	return exists
 }
 
 // Size returns the item count of the cache
-func (ffs *FS) Size() int {
-	return len(ffs.Iter())
+func (m *Monitor) Size() int {
+	return len(m.ExportFileMap())
 }
 
 // WalkDir walks through the root directory, recursively
@@ -99,12 +96,12 @@ func WalkDir(path string, handler DirHandler) error {
 	return nil
 }
 
-// Update runs and collects any new or removed files in the root directory
-func (ffs *FS) Update() {
-	err := WalkDir(ffs.root, func(path string, d fs.DirEntry) error {
+// Refresh runs and collects any new or removed files in the root directory
+func (m *Monitor) Refresh() {
+	err := WalkDir(m.root, func(path string, d fs.DirEntry) error {
 		sum, _ := Checksum(path)
-		if !d.IsDir() {
-			ffs.Add(path, &File{
+		if !d.IsDir() && !m.Exists(path) {
+			m.Add(path, &File{
 				path: path,
 				last: sum,
 			})

@@ -1,17 +1,7 @@
 # wfile
 A simple file watcher for Go.
 
-`wfile` compares MD5 checksums of a given directory for changes, and emits a change event when a change occurs. 
-## Listening for changes
-```go
-package main
-
-import "github.com/aboxofsox/wfile"
-
-func main(){
-    wfile.Listen("root")
-}
-```
+`wfile` compares MD5 checksums of a given directory for changes, and emits a change event when a change occurs.
 
 ## Subscribing to events
 Events are triggered when a change is detected. Currently, there are only three different events; `CHANGE`, `NOCHANGE`, `ERROR`. Errors live in their own channel.
@@ -23,29 +13,40 @@ package main
 import "github.com/aboxofsox/wfile"
 
 func main() {
-    w := &wfile.Watcher{
-        interval: time.Millisecond * 500,
-        files: make(chan wfile.File),
-        events: make(chan wfile.Event),
-        errors :make(chan error),
-        ffs: wfile.NewFS("root"),
-    }
+    watcher := &Watcher{
+		interval: time.Millisecond * 500,
+		events:   make(chan Event),
+		monitor:  m,
+	}
 
-    go w.Watch()
-    go w.Subscribe()
+	done := make(chan bool)
+	wg := new(sync.WaitGroup)
 
-    for {
-        go func(){
-            select {
-                case event := <-w.events:
-                    // handle event
-                case err := <-w.errors:
-                    // handle error
-            }
-        }()
-    }
+	for {
+		wg.Add(1)
+		go watcher.Watch(done, wg
 
-
+        // listen for any change events
+		go func() {
+			defer wg.Done()
+			for event := range watcher.events {
+				wg.Add(1)
+				switch event.code {
+				case CHANGE:
+					fmt.Println("change detected")
+					break
+				case NOCHANGE:
+					break
+				case ERROR:
+					fmt.Println(event.error)
+					break
+				}
+			}
+		}()
+		time.Sleep(time.Millisecond * 1600)
+		wg.Wait()
+	}
 }
 ```
+
 
