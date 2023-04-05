@@ -24,7 +24,7 @@ func main() {
 
 	for {
 		wg.Add(1)
-		go watcher.Watch(done, wg
+		go watcher.Watch(done, wg)
 
         // listen for any change events
 		go func() {
