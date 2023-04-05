@@ -10,8 +10,8 @@ import (
 // the default polling interval is 500ms.
 func Listen(m *Monitor) {
 	watcher := &Watcher{
-		events:  make(chan Event),
-		monitor: m,
+		Events:  make(chan Event),
+		Monitor: m,
 	}
 
 	done := make(chan bool)
@@ -21,7 +21,7 @@ func Listen(m *Monitor) {
 		wg.Add(1)
 		go watcher.Watch(done)
 		go func() {
-			for event := range watcher.events {
+			for event := range watcher.Events {
 				switch event.code {
 				case CHANGE:
 					fmt.Println("change detected")
