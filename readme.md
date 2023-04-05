@@ -14,8 +14,8 @@ import "github.com/aboxofsox/wfile"
 
 func main() {
     watcher := &Watcher{
-		interval: time.Millisecond * 500,
 		events:   make(chan Event),
+		errors: make(chan error),
 		monitor:  m,
 	}
 
@@ -28,17 +28,16 @@ func main() {
 
         // listen for any change events
 		go func() {
-			defer wg.Done()
 			for event := range watcher.events {
 				wg.Add(1)
 				switch event.code {
 				case CHANGE:
-					fmt.Println("change detected")
+					// do something
 					break
 				case NOCHANGE:
 					break
 				case ERROR:
-					fmt.Println(event.error)
+					// handle error
 					break
 				}
 			}
@@ -48,5 +47,4 @@ func main() {
 	}
 }
 ```
-
 
