@@ -6,8 +6,10 @@ import (
 )
 
 // Listen will start the file listening process.
-// the default polling interval is 500ms.
-func Listen(m *Monitor) {
+// the default polling interval is 1600ms.
+func Listen(root string, interval time.Duration, handler EventHandler) {
+	m := NewMonitor(root)
+
 	watcher := &Watcher{
 		Events:  make(chan Event),
 		Monitor: m,
@@ -19,8 +21,8 @@ func Listen(m *Monitor) {
 	for {
 		wg.Add(1)
 		go watcher.Watch(done)
-		go watcher.Subscribe()
-		time.Sleep(time.Millisecond * 1600)
+		go watcher.Subscribe(handler)
+		time.Sleep(interval)
 		wg.Wait()
 	}
 }
