@@ -13,10 +13,9 @@ package main
 import "github.com/aboxofsox/wfile"
 
 func main() {
-    watcher := &Watcher{
-		events:   make(chan Event),
-		errors: make(chan error),
-		monitor:  m,
+   watcher := &Watcher{
+		Events:  make(chan Event),
+		Monitor: m,
 	}
 
 	done := make(chan bool)
@@ -24,26 +23,47 @@ func main() {
 
 	for {
 		wg.Add(1)
-		go watcher.Watch(done, wg)
-
-        // listen for any change events
-		go func() {
-			for event := range watcher.events {
-				switch event.code {
-				case CHANGE:
-					// do something
-					break
-				case NOCHANGE:
-					break
-				case ERROR:
-					// handle error
-					break
-				}
-			}
-		}()
+		go watcher.Watch(done)
+		go watcher.Subscribe()
 		time.Sleep(time.Millisecond * 1600)
 		wg.Wait()
 	}
 }
 ```
+or
 
+```go
+import "github.com/aboxofsox/wfile"
+
+func main() {
+    watcher := &Watcher{
+		Events:  make(chan Event),
+		Monitor: m,
+	}
+
+	done := make(chan bool)
+	wg := new(sync.WaitGroup)
+
+	for {
+		wg.Add(1)
+		go watcher.Watch(done)
+		go func(){
+            for event := range watcher.Events {
+                switch event.code{
+                    case CHANGE:
+                        // do something
+                        break
+                    case NOCHANGE:
+                        // do something
+                        break
+                    case ERROR:
+                        // handle error
+                        break
+                }
+            }
+        }()
+		time.Sleep(time.Millisecond * 1600)
+		wg.Wait()
+	}
+}
+```

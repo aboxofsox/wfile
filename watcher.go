@@ -2,11 +2,13 @@ package wfile
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
 // Watcher holds all relevant data for the watching mechanism.
 type Watcher struct {
+	Mx      sync.Mutex
 	Events  chan Event
 	Errors  chan error
 	Monitor *Monitor
@@ -30,6 +32,7 @@ type Event struct {
 
 // Watch will "watch" a given directory for changes.
 func (w *Watcher) Watch(done chan bool) {
+	//w.Mx.Lock()
 	ticker := time.NewTicker(time.Millisecond * 500)
 
 	for {

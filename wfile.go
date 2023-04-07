@@ -1,7 +1,6 @@
 package wfile
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -20,20 +19,7 @@ func Listen(m *Monitor) {
 	for {
 		wg.Add(1)
 		go watcher.Watch(done)
-		go func() {
-			for event := range watcher.Events {
-				switch event.code {
-				case CHANGE:
-					fmt.Println("change detected")
-					break
-				case NOCHANGE:
-					break
-				case ERROR:
-					fmt.Println(event.error)
-					break
-				}
-			}
-		}()
+		go watcher.Subscribe()
 		time.Sleep(time.Millisecond * 1600)
 		wg.Wait()
 	}
