@@ -19,7 +19,7 @@ type Monitor struct {
 	files    *sync.Map
 }
 
-// File is just a file path to watch.
+// File is just a file Path to watch.
 // also tracks the last checksum
 type File struct {
 	path string
@@ -78,18 +78,18 @@ func (m *Monitor) Size() int {
 func WalkDir(path string, handler DirHandler) error {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return fmt.Errorf("walkdir read path error: %v", err)
+		return fmt.Errorf("walkdir read Path Error: %v", err)
 	}
 
 	for _, entry := range entries {
 		entryPath := filepath.Join(path, entry.Name())
 		if entry.IsDir() {
 			if err := WalkDir(entryPath, handler); err != nil {
-				return fmt.Errorf("walkdir recursion error: %v", err)
+				return fmt.Errorf("walkdir recursion Error: %v", err)
 			}
 		} else {
 			if err := handler(entryPath, entry); err != nil {
-				return fmt.Errorf("walkdir handler error: %v", err)
+				return fmt.Errorf("walkdir handler Error: %v", err)
 			}
 		}
 	}
@@ -109,7 +109,7 @@ func (m *Monitor) Refresh() {
 		return nil
 	})
 	if err != nil {
-		fmt.Println("fs update error:", err)
+		fmt.Println("fs update Error:", err)
 		return
 	}
 }
