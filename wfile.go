@@ -5,14 +5,12 @@ import (
 	"time"
 )
 
-// Listen will start the file listening process.
-// the default polling interval is 1600ms.
+// Listen starts monitoring the directory at the specified root path for changes at the specified interval.
+// When a change is detected, the handler function is called with the details of the event.
 func Listen(root string, interval time.Duration, handler EventHandler) {
-	m := NewMonitor(root)
-
 	watcher := &Watcher{
 		Events:  make(chan Event),
-		Monitor: m,
+		Monitor: NewMonitor(root),
 	}
 
 	done := make(chan bool)
