@@ -96,7 +96,7 @@ func WalkDir(path string, handler DirHandler) error {
 	return nil
 }
 
-// Refresh runs and collects any new or removed files in the root directory
+// Refresh runs and checks for any new or removed files in the root directory
 func (m *Monitor) Refresh() {
 	err := WalkDir(m.root, func(path string, d fs.DirEntry) error {
 		sum, _ := Checksum(path)

@@ -10,6 +10,8 @@ const (
 	MaxFileSize = 1 << 12
 )
 
+// Checksum calculates the MD5 checksum of the file at the specified path. If the file does not exist or is too
+// large to process, an error is returned. Otherwise, the function returns the checksum as a byte array and a nil error.
 func Checksum(path string) ([md5.Size]byte, error) {
 	info, err := os.Stat(path)
 	if err != nil {
