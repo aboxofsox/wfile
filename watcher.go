@@ -19,20 +19,20 @@ type EventCode int
 //
 // CHANGE indicates that the file system has detected a change in a file that is being monitored.
 // NOCHANGE indicates that the file system has not detected any changes since the last check.
-// ERROR indicates that an error has occurred while monitoring the file system.
+// ERROR indicates that an Error has occurred while monitoring the file system.
 const (
 	CHANGE EventCode = iota
 	NOCHANGE
 	ERROR
 )
 
-// Event represents a file system event, including the name of the event, the type of event
-// (as an EventCode), the path of the affected file, and an optional error value.
+// Event represents a file system event, including the Name of the event, the type of event
+// (as an EventCode), the Path of the affected file, and an optional Error value.
 type Event struct {
-	name  string
-	code  EventCode
-	path  string
-	error error
+	Name  string
+	Code  EventCode
+	Path  string
+	Error error
 }
 
 // EventHandler type defines the EventHandler function
@@ -66,9 +66,9 @@ func (w *Watcher) Watch(done chan bool) {
 // refreshing the Monitor object associated with the Watcher. It then loops through
 // all the files in the Monitor's ExportFileMap, which is a map of file paths to
 // file objects. For each file, it calculates its checksum using the Checksum
-// function, which returns an error if the file can't be read. If the file's checksum
+// function, which returns an Error if the file can't be read. If the file's checksum
 // is different from its last known checksum, it updates the file object and sends
-// a CHANGE event to the Watcher's Events channel. If there is an error calculating
+// a CHANGE event to the Watcher's Events channel. If there is an Error calculating
 // the checksum, it sends an ERROR event to the Watcher's Errors channel.
 func (w *Watcher) Walk() {
 	w.Monitor.Refresh()
@@ -77,12 +77,12 @@ func (w *Watcher) Walk() {
 		file := f.(*File)
 		sum, err := Checksum(file.path)
 		if err != nil {
-			fmt.Println("file checksum error:", err)
+			fmt.Println("file checksum Error:", err)
 			w.Errors <- err
 		}
 		if file.last != sum {
 			file.last = sum
-			w.Events <- Event{name: "change", path: file.path, code: CHANGE, error: nil}
+			w.Events <- Event{Name: "change", Path: file.path, Code: CHANGE, Error: nil}
 		}
 	}
 }

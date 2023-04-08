@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Listen starts monitoring the directory at the specified root path for changes at the specified interval.
+// Listen starts monitoring the directory at the specified root Path for changes at the specified interval.
 // When a change is detected, the handler function is called with the details of the event.
 func Listen(root string, interval time.Duration, handler EventHandler) {
 	watcher := &Watcher{
