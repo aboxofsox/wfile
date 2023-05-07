@@ -91,8 +91,8 @@ func (w *watcher) walk() {
 	}
 }
 
-// Subscribe will listen for events emitted from the watcher.
-func (w *watcher) Subscribe(ctx context.Context, handler func(e Event)) {
+// subscribe will listen for events emitted from the watcher.
+func (w *watcher) subscribe(ctx context.Context, handler func(e Event)) {
 	for event := range w.events {
 		select {
 		case <-ctx.Done():

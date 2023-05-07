@@ -32,7 +32,7 @@ func Listen(root string, ctx context.Context, handler func(e Event)) {
 			}()
 			go func() {
 				defer wg.Done()
-				watcher.Subscribe(ctx, handler)
+				watcher.subscribe(ctx, handler)
 			}()
 		}
 		wg.Wait()
