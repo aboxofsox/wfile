@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-type DirHandler func(path string, d fs.DirEntry) error
-
 // monitor stores the information we need for the cache
 type monitor struct {
 	root     string
@@ -75,7 +73,7 @@ func (m *monitor) size() int {
 }
 
 // walkDir walks through the root directory, recursively
-func walkDir(path string, handler DirHandler) error {
+func walkDir(path string, handler func(path string, d fs.DirEntry) error) error {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("walkdir read Path Error: %v", err)
