@@ -3,6 +3,7 @@ package wfile
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -48,7 +49,6 @@ func (w *watcher) watch(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("file watching canceled")
 			ticker.Stop()
 			w.monitor.purge()
 			return
@@ -73,6 +73,12 @@ func (w *watcher) walk() {
 
 	for _, f := range w.monitor.toMap() {
 		file := f.(*file)
+
+		if _, err := os.Stat(file.path); os.IsNotExist(err) {
+			w.monitor.delete(file.path)
+			break
+		}
+
 		sum, err := checksum(file.path)
 		if err != nil {
 			fmt.Println("file checksum Error:", err)

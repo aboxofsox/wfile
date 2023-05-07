@@ -100,6 +100,7 @@ func walkDir(path string, handler DirHandler) error {
 func (m *monitor) refresh() {
 	err := walkDir(m.root, func(path string, d fs.DirEntry) error {
 		sum, _ := checksum(path)
+
 		if !d.IsDir() && !m.exists(path) {
 			m.add(path, &file{
 				path: path,
@@ -109,7 +110,7 @@ func (m *monitor) refresh() {
 		return nil
 	})
 	if err != nil {
-		fmt.Println("fs update Error:", err)
+		fmt.Println("monitor update Error:", err)
 		return
 	}
 }
