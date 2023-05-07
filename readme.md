@@ -1,63 +1,49 @@
 # wfile
 A simple file watcher for Go.
 
-`wfile` compares MD5 checksums of a given directory for changes, and emits a change event when a change occurs.
+`wfile` uses MD5 hashes to detect changes to a file's contents. While `wfile` can be useful for smaller projects, it might not work out so well if you have a lot of files you to need to listen to.
 
-## Subscribing to events
-Events are triggered when a change is detected. Currently, there are only three different events; `CHANGE`, `NOCHANGE`, `ERROR`. Errors live in their own channel.
-
-To "subscribe" to these events:
-
+## Usage
 ```go
 package main
 
-import "github.com/aboxofsox/wfile"
+import (
+    "github.com/aboxofsox/wfile"
+    "context"
+ )
 
 func main() {
-    watcher := &Watcher{
-        Events: make(chan wfile.Event),
-        Monitor: wfile.NewMonitor("."),
-    }
+    ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+    defer cancel()
 
-    done := make(chan bool)
-    wg := new(sync.WaitGroup)
-
-    for {
-        wg.Add(1)
-        go watcher.Watch(done) // <- watch for changes
-        go watcher.Subscribe(handler) // <- subscribe to events
-        time.Sleep(time.Millisecond * 1600)
-        wg.Wait()
-    }
-}
-
-func handler(event wfile.Event) {
-    switch event.Code {
-        case wfile.CHANGE:
-            // do something
-        case wfile.NOCHANGE:
-            // do something else
-        case wfile.ERROR:
-            // handle error
-    }
-}
-```
-Alternatively:
-```go
-package main
-
-import "github.com/aboxofsox/wfile"
-
-func main() {
-    wfile.Listen(".", time.Millisecond * 1600, func(e wfile.Event){
-        switch e.code {
-            case wfile.CHANGE:
-                // do soemthing
-            case wfile.NOCHANGE:
-                // do something
-            case wfile.ERROR:
-                // handle error
+    wfile.Listen("some-dir", ctx, func(e wfile.Event) {
+        if e.Code == wfile.CHANGE {
+            fmt.Println("change detected")
+        }
+        if e.Code == wfile.ERROR {
+            fmt.Println(e.Error.Error())
         }
     })
 }
 ```
+If you want to listen for change indefinitely:
+```go
+package main
+
+import (
+    "github.com/aboxofsox/wfile"
+    "context"
+ )
+
+func main() {
+    wfile.Listen("some-dir", context.TODO(), func(e wfile.Event) {
+        if e.Code == wfile.CHANGE {
+            fmt.Println("change detected")
+        }
+        if e.Code == wfile.ERROR {
+            fmt.Println(e.Error.Error())
+        }
+    })
+}
+```
+

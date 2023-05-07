@@ -12,31 +12,31 @@ import (
 
 type DirHandler func(path string, d fs.DirEntry) error
 
-// Monitor stores the information we need for the cache
-type Monitor struct {
+// monitor stores the information we need for the cache
+type monitor struct {
 	root     string
 	interval time.Duration
 	files    *sync.Map
 }
 
-// File is just a file Path to watch.
+// file is just a file Path to watch.
 // also tracks the last checksum
-type File struct {
+type file struct {
 	path string
 	last [md5.Size]byte
 }
 
-// NewMonitor acts as a cache.
+// newMonitor acts as a cache.
 // keeping track of the files to watch.
-func NewMonitor(root string) *Monitor {
-	return &Monitor{
+func newMonitor(root string) *monitor {
+	return &monitor{
 		root:  root,
 		files: &sync.Map{},
 	}
 }
 
-// Add adds an item to the cache
-func (m *Monitor) Add(key, value any) {
+// add adds an item to the cache
+func (m *monitor) add(key, value any) {
 	if _, exists := m.files.Load(key); exists {
 		fmt.Println(key, "exists")
 		return
@@ -44,16 +44,16 @@ func (m *Monitor) Add(key, value any) {
 	m.files.Store(key, value)
 }
 
-// Delete removes an item from the cache
-func (m *Monitor) Delete(key any) {
+// delete removes an item from the cache
+func (m *monitor) delete(key any) {
 	if _, exists := m.files.Load(key); !exists {
 		return
 	}
 	m.files.Delete(key)
 }
 
-// ExportFileMap creates a map[any]any representation of the cache
-func (m *Monitor) ExportFileMap() map[any]any {
+// toMap creates a map[any]any representation of the cache
+func (m *monitor) toMap() map[any]any {
 	mp := make(map[any]any)
 
 	m.files.Range(func(key, value any) bool {
@@ -63,19 +63,19 @@ func (m *Monitor) ExportFileMap() map[any]any {
 	return mp
 }
 
-// Exists checks if a key exists in the cache
-func (m *Monitor) Exists(key any) bool {
+// exists checks if a key exists in the cache
+func (m *monitor) exists(key any) bool {
 	_, exists := m.files.Load(key)
 	return exists
 }
 
-// Size returns the item count of the cache
-func (m *Monitor) Size() int {
-	return len(m.ExportFileMap())
+// size returns the item count of the cache
+func (m *monitor) size() int {
+	return len(m.toMap())
 }
 
-// WalkDir walks through the root directory, recursively
-func WalkDir(path string, handler DirHandler) error {
+// walkDir walks through the root directory, recursively
+func walkDir(path string, handler DirHandler) error {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("walkdir read Path Error: %v", err)
@@ -84,7 +84,7 @@ func WalkDir(path string, handler DirHandler) error {
 	for _, entry := range entries {
 		entryPath := filepath.Join(path, entry.Name())
 		if entry.IsDir() {
-			if err := WalkDir(entryPath, handler); err != nil {
+			if err := walkDir(entryPath, handler); err != nil {
 				return fmt.Errorf("walkdir recursion Error: %v", err)
 			}
 		} else {
@@ -96,12 +96,12 @@ func WalkDir(path string, handler DirHandler) error {
 	return nil
 }
 
-// Refresh runs and checks for any new or removed files in the root directory
-func (m *Monitor) Refresh() {
-	err := WalkDir(m.root, func(path string, d fs.DirEntry) error {
-		sum, _ := Checksum(path)
-		if !d.IsDir() && !m.Exists(path) {
-			m.Add(path, &File{
+// refresh runs and checks for any new or removed files in the root directory
+func (m *monitor) refresh() {
+	err := walkDir(m.root, func(path string, d fs.DirEntry) error {
+		sum, _ := checksum(path)
+		if !d.IsDir() && !m.exists(path) {
+			m.add(path, &file{
 				path: path,
 				last: sum,
 			})
@@ -111,5 +111,11 @@ func (m *Monitor) Refresh() {
 	if err != nil {
 		fmt.Println("fs update Error:", err)
 		return
+	}
+}
+
+func (m *monitor) purge() {
+	for k := range m.toMap() {
+		m.delete(k)
 	}
 }
