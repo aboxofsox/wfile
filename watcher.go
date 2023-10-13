@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-// watcher is a struct that represents a file system watcher. It contains channels for sending events and errors,
+// Watcher is a struct that represents a file system Watcher. It contains channels for sending events and errors,
 // as well as a monitor that tracks the state of the file system.
-type watcher struct {
+type Watcher struct {
 	events  chan Event // Channel for sending events
 	errors  chan error // Channel for sending errors
 	monitor *monitor   // monitor that tracks the state of the file system
@@ -17,7 +17,7 @@ type watcher struct {
 
 type EventCode int
 
-// These constants define the possible event codes that can be sent by a watcher.
+// These constants define the possible event codes that can be sent by a Watcher.
 //
 // CHANGE indicates that the file system has detected a change in a file that is being monitored.
 // NOCHANGE indicates that the file system has not detected any changes since the last check.
@@ -44,7 +44,7 @@ type Event struct {
 // and the function returns. Otherwise, it calls the walk method to scan the file system
 // for changes. After each cycle of the loop, the function sleeps for 1.6 seconds to prevent
 // excessive CPU usage.
-func (w *watcher) watch(ctx context.Context) {
+func (w *Watcher) watch(ctx context.Context) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	for {
 		select {
@@ -61,14 +61,14 @@ func (w *watcher) watch(ctx context.Context) {
 
 // walk scans the file system for changes since the last time it was called and
 // sends events for any modified files. It first updates the file system state by
-// refreshing the monitor object associated with the watcher. It then loops through
+// refreshing the monitor object associated with the Watcher. It then loops through
 // all the files in the monitor's toMap, which is a map of file paths to
 // file objects. For each file, it calculates its checksum using the checksum
 // function, which returns an Error if the file can't be read. If the file's checksum
 // is different from its last known checksum, it updates the file object and sends
-// a CHANGE event to the watcher's events channel. If there is an Error calculating
-// the checksum, it sends an ERROR event to the watcher's errors channel.
-func (w *watcher) walk() {
+// a CHANGE event to the Watcher's events channel. If there is an Error calculating
+// the checksum, it sends an ERROR event to the Watcher's errors channel.
+func (w *Watcher) walk() {
 	w.monitor.refresh()
 
 	for _, f := range w.monitor.toMap() {
@@ -91,8 +91,8 @@ func (w *watcher) walk() {
 	}
 }
 
-// subscribe will listen for events emitted from the watcher.
-func (w *watcher) subscribe(ctx context.Context, handler func(e Event)) {
+// subscribe will listen for events emitted from the Watcher.
+func (w *Watcher) subscribe(ctx context.Context, handler func(e Event)) {
 	for event := range w.events {
 		select {
 		case <-ctx.Done():

@@ -12,7 +12,7 @@ import (
 func Listen(ctx context.Context, root string, handler func(e Event)) {
 	wg := new(sync.WaitGroup)
 
-	watcher := &watcher{
+	watcher := &Watcher{
 		events:  make(chan Event),
 		monitor: newMonitor(root),
 	}
