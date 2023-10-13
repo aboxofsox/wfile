@@ -9,7 +9,7 @@ import (
 // Listen starts monitoring the directory at the specified root Path for changes at the specified interval.
 // When a change is detected, the handler function is called with the details of the event.
 // Listening is terminated when ctx.Done() is triggered.
-func Listen(root string, ctx context.Context, handler func(e Event)) {
+func Listen(ctx context.Context, root string, handler func(e Event)) {
 	wg := new(sync.WaitGroup)
 
 	watcher := &watcher{
