@@ -36,7 +36,7 @@ import (
  )
 
 func main() {
-    wfile.Listen("some-dir", context.TODO(), func(e wfile.Event) {
+    wfile.Listen(context.TODO(), "some-dir", func(e wfile.Event) {
         if e.Code == wfile.CHANGE {
             fmt.Println("change detected")
         }
