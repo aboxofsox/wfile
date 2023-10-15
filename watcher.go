@@ -72,21 +72,21 @@ func (w *Watcher) walk() {
 	w.monitor.refresh()
 
 	for _, f := range w.monitor.toMap() {
-		file := f.(*file)
+		_file := f.(*file)
 
-		if _, err := os.Stat(file.path); os.IsNotExist(err) {
-			w.monitor.delete(file.path)
+		if _, err := os.Stat(_file.path); os.IsNotExist(err) {
+			w.monitor.delete(_file.path)
 			break
 		}
 
-		sum, err := checksum(file.path)
+		sum, err := checksum(_file.path)
 		if err != nil {
-			fmt.Println("file checksum Error:", err)
+			fmt.Println("_file checksum Error:", err)
 			w.errors <- err
 		}
-		if file.last != sum {
-			file.last = sum
-			w.events <- Event{Name: "change", Path: file.path, Code: CHANGE, Error: nil}
+		if _file.last != sum {
+			_file.last = sum
+			w.events <- Event{Name: "change", Path: _file.path, Code: CHANGE, Error: nil}
 		}
 	}
 }
