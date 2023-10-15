@@ -16,7 +16,7 @@ func main() {
     ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
     defer cancel()
 
-    wfile.Listen("some-dir", ctx, func(e wfile.Event) {
+    wfile.Listen( ctx, "some-dir",func(e wfile.Event) {
         if e.Code == wfile.CHANGE {
             fmt.Println("change detected")
         }
@@ -26,7 +26,7 @@ func main() {
     })
 }
 ```
-If you want to listen for change indefinitely:
+If you want to listen for changes indefinitely:
 ```go
 package main
 
