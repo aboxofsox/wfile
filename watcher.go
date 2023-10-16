@@ -55,7 +55,7 @@ func (w *Watcher) watch(ctx context.Context) {
 		case <-ticker.C:
 			w.walk()
 		}
-		time.Sleep(time.Millisecond * 1600)
+		time.Sleep(time.Millisecond * 500)
 	}
 }
 
@@ -70,28 +70,66 @@ func (w *Watcher) watch(ctx context.Context) {
 // the checksum, it sends an ERROR event to the Watcher's errors channel.
 func (w *Watcher) walk() {
 	w.monitor.refresh()
+	w.processFiles()
+}
 
-	for _, f := range w.monitor.toMap() {
-		file := f.(*file)
+// refershMonitor calls a refresh method on the associated monitor of the Watcher.
+func (w *Watcher) refershMonitor() {
+	w.monitor.refresh()
+}
 
-		if _, err := os.Stat(file.path); os.IsNotExist(err) {
-			w.monitor.delete(file.path)
-			break
-		}
+// fileChanged checks if the content of a file has changed.
+// It does so by comparing the current checksum of the file
+// to its previous state. Any error occurred during this process will be pushed to the error channel.
+func (w *Watcher) fileChanged(f *file) (result bool) {
+	result = false
+	sum, err := checksum(f.path)
+	if err != nil {
+		fmt.Println("file checksum Error:", err)
+		w.errors <- err
+	}
+	if f.last != sum {
+		result = true
+	}
+	return
+}
 
-		sum, err := checksum(file.path)
-		if err != nil {
-			fmt.Println("file checksum Error:", err)
-			w.errors <- err
-		}
-		if file.last != sum {
-			file.last = sum
-			w.events <- Event{Name: "change", Path: file.path, Code: CHANGE, Error: nil}
-		}
+// exists checks if the given file exists.
+// If not, the method removes the file path from the monitor and reports an error through the error channel.
+func (w *Watcher) exists(f *file) {
+	if _, err := os.Stat(f.path); os.IsNotExist(err) {
+		w.monitor.delete(f.path)
+		w.errors <- err
 	}
 }
 
-// subscribe will listen for events emitted from the Watcher.
+// update modifies the last known checksum of the file and emits a change event.
+// Any errors occurred during the checksum calculation process are ignored and will not affect the operation.
+func (w *Watcher) update(f *file) {
+	sum, _ := checksum(f.path)
+	f.last = sum
+	w.events <- Event{Name: "change", Path: f.path, Code: CHANGE, Error: nil}
+}
+
+// process performs an existence check and
+// updates the file if a change in its content has been detected.
+func (w *Watcher) process(f *file) {
+	w.exists(f)
+	if w.fileChanged(f) {
+		w.update(f)
+	}
+}
+
+// processFiles goes through every currently tracked file
+// and performs an existence and update check for each one.
+func (w *Watcher) processFiles() {
+	for _, f := range w.monitor.toMap() {
+		w.process(f.(*file))
+	}
+}
+
+// subscribe creates a subscription for event listeners using a handler function.
+// The handler will receive events from the Watcher until context cancellation occurs.
 func (w *Watcher) subscribe(ctx context.Context, handler func(e Event)) {
 	for event := range w.events {
 		select {

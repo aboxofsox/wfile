@@ -10,20 +10,28 @@ package main
 import (
     "github.com/aboxofsox/wfile"
     "context"
+	"fmt"
+	"time"
  )
 
 func main() {
-    ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
-    defer cancel()
-
-    wfile.Listen( ctx, "some-dir",func(e wfile.Event) {
-        if e.Code == wfile.CHANGE {
-            fmt.Println("change detected")
-        }
-        if e.Code == wfile.ERROR {
-            fmt.Println(e.Error.Error())
+	listener := wfile.NewListener(context.Background(), "root", func(e wfile.Event) {
+		switch e.Code {
+		case wfile.CHANGE:
+			fmt.Println("change detected")
+		case wfile.ERROR:
+			fmt.Println(e.Error.Error())
         }
     })
+	
+	go func (){
+		time.AfterFunc(time.Second * 30, func() {
+			listener.Cancel()
+        })
+    }()
+	
+	listener.Watch()
+	
 }
 ```
 If you want to listen for changes indefinitely:
@@ -36,14 +44,16 @@ import (
  )
 
 func main() {
-    wfile.Listen(context.TODO(), "some-dir", func(e wfile.Event) {
-        if e.Code == wfile.CHANGE {
-            fmt.Println("change detected")
-        }
-        if e.Code == wfile.ERROR {
-            fmt.Println(e.Error.Error())
-        }
-    })
+	listener := wfile.NewListener(context.Background(), "root", func(e wfile.Event) {
+		switch e.Code {
+		case wfile.CHANGE:
+			fmt.Println("change detected")
+		case wfile.ERROR:
+			fmt.Println(e.Error.Error())
+		}
+	})
+	
+	listener.Watch()
 }
 ```
 
