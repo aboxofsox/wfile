@@ -7,84 +7,65 @@ import (
 )
 
 type Listener struct {
+	Cancel  context.CancelFunc
 	ctx     context.Context
-	root    string
-	handler func(e Event)
 	wg      *sync.WaitGroup
-	watcher *Watcher
 	ticker  *time.Ticker
+	watcher *Watcher
+	handler HandlerFunc
 }
 
-func Newlistener(ctx context.Context, root string, handler func(e Event)) *Listener {
+type HandlerFunc func(e Event)
+
+// NewListener creates a new Listener
+func NewListener(ctx context.Context, root string, handler HandlerFunc) *Listener {
+	_ctx, cancel := context.WithCancel(ctx)
 	return &Listener{
-		ctx:     ctx,
-		root:    root,
-		handler: handler,
-		wg:      new(sync.WaitGroup),
+		Cancel: cancel,
+		ctx:    _ctx,
+		wg:     new(sync.WaitGroup),
+		ticker: time.NewTicker(500 * time.Millisecond), // 🧯💨🔥
 		watcher: &Watcher{
 			events:  make(chan Event),
+			errors:  make(chan error),
 			monitor: newMonitor(root),
 		},
-		ticker: time.NewTicker(500 * time.Millisecond),
+		handler: handler,
 	}
 }
 
+// Watch is a method for the Listener struct. It starts a loop that continuously checks for signals from
+// the context and ticker attached to the listener.
+// If the context is done, it returns, effectively stopping the loop.
+// If the ticker sends a signal, it increments a WaitGroup counter and starts two goroutines.
+// The first goroutine checks if there isn't an error in the context and if so, reduces the
+// WaitGroup counter and invokes the watch function of the watcher attached to the listener.
+// The second routine does a similar context error check and, if no error is found, it invokes
+// the subscribe function of the watcher by passing the context and an event handler.
+// This way, the Watch function provides periodic checks and calls for watcher's functions,
+// while providing a mechanism for cleanly stopping the function via context.
 func (l *Listener) Watch() {
 	defer l.ticker.Stop()
 
 	for {
-		go l.handleEvent()
-		l.wg.Wait()
+		select {
+		case <-l.ctx.Done():
+			return
+		case <-l.ticker.C:
+			l.wg.Add(1)
+
+			// there can only be one call to l.wg.Done()
+			go func() {
+				go func() {
+					if l.ctx.Err() == nil {
+						defer l.wg.Done()
+						l.watcher.watch(l.ctx)
+					}
+				}()
+				if l.ctx.Err() == nil {
+					l.watcher.subscribe(l.ctx, l.handler)
+				}
+			}()
+		}
 	}
 }
-
-func (l *Listener) handleEvent() {
-	l.wg.Add(1)
-	defer l.wg.Done()
-
-	select {
-	case <-l.ctx.Done():
-		return
-	case <-l.ticker.C:
-		l.watchAndSubscribe()
-	}
-}
-
-func (l *Listener) watchAndSubscribe() {
-	defer l.wg.Done()
-	l.watcher.watch(l.ctx)
-	l.watcher.subscribe(l.ctx, l.handler)
-}
-
-// Listen starts monitoring the directory at the specified root Path for changes at the specified interval.
-// When a change is detected, the handler function is called with the details of the event.
-// Listening is terminated when ctx.Done() is triggered.
-//func Listen(ctx context.Context, root string, handler func(e Event)) {
-//	wg := new(sync.WaitGroup)
-//
-//	watcher := &Watcher{
-//		events:  make(chan Event),
-//		monitor: newMonitor(root),
-//	}
-//
-//	ticker := time.NewTicker(500 * time.Millisecond)
-//	defer ticker.Stop()
-//
-//	for {
-//		wg.Add(1)
-//		select {
-//		case <-ctx.Done():
-//			return
-//		case <-ticker.C:
-//			go func() {
-//				defer wg.Done()
-//				watcher.watch(ctx)
-//			}()
-//			go func() {
-//				defer wg.Done()
-//				watcher.subscribe(ctx, handler)
-//			}()
-//		}
-//		wg.Wait()
-//	}
-//}
