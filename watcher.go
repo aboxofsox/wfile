@@ -42,7 +42,7 @@ type Event struct {
 // enters a loop that repeatedly selects between receiving from the done channel and
 // the Ticker's channel. If a signal is received on the done channel, the Ticker is stopped
 // and the function returns. Otherwise, it calls the walk method to scan the file system
-// for changes. After each cycle of the loop, the function sleeps for 1.6 seconds to prevent
+// for changes. After each cycle of the loop, the function sleeps for 500 milliseconds to prevent
 // excessive CPU usage.
 func (w *Watcher) watch(ctx context.Context) {
 	ticker := time.NewTicker(500 * time.Millisecond)
