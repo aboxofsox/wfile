@@ -10,15 +10,12 @@ import (
 	"time"
 )
 
-// monitor stores the information we need for the cache
 type monitor struct {
 	root     string
 	interval time.Duration
 	files    *sync.Map
 }
 
-// file is just a file Path to watch.
-// also tracks the last checksum
 type file struct {
 	path string
 	last [md5.Size]byte
